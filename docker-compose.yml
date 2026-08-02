@@ -2,7 +2,7 @@ services:
 
   postgres:
 
-    image: postgres:16
+    image: postgres:15
 
     container_name: keycloak-postgres
 
@@ -32,13 +32,18 @@ services:
 
   keycloak:
 
-    image: quay.io/keycloak/keycloak:26.3
+    image: quay.io/keycloak/keycloak:26.3.5
 
     container_name: keycloak
 
     restart: unless-stopped
 
-    command: start-dev
+    command: 
+     - start-dev
+     - --import-realm
+
+    volumes:
+     - ./keycloak:/opt/keycloak/data/import
 
     depends_on:
 
@@ -62,9 +67,9 @@ services:
 
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
 
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME}
 
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD}
 
 
 volumes:
