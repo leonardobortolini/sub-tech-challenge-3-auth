@@ -4,6 +4,9 @@ services:
 
     image: postgres:15
 
+    networks:
+      - revenda-network
+
     container_name: keycloak-postgres
 
     restart: unless-stopped
@@ -33,6 +36,9 @@ services:
   keycloak:
 
     image: quay.io/keycloak/keycloak:26.3.5
+
+    networks:
+      - revenda-network
 
     container_name: keycloak
 
@@ -75,3 +81,7 @@ services:
 volumes:
 
   postgres_data:
+
+networks:
+  revenda-network:
+    name: revenda-network
