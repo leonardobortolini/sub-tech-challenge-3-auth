@@ -50,10 +50,27 @@ jobs:
             service/keycloak-service \
             8080:8080 > /tmp/port-forward.log 2>&1 &
 
-          sleep 10
+          echo "Aguardando Keycloak..."
 
-          curl --fail \
-            http://localhost:8080/realms/revenda/.well-known/openid-configuration
+          for i in {1..30}; do
+
+            if curl -sf \
+              http://localhost:8080/realms/revenda/.well-known/openid-configuration \
+              > /dev/null; then
+
+              echo "Keycloak disponível."
+              exit 0
+
+            fi
+
+            echo "Keycloak ainda não está disponível..."
+            sleep 5
+
+          done
+
+          echo "Keycloak não ficou disponível."
+          cat /tmp/port-forward.log
+          exit 1
 
       - name: Exibir logs em caso de erro
         if: failure()
@@ -64,3 +81,5 @@ jobs:
             -n revenda \
             -l app=keycloak \
             --tail=100
+          echo "Logs do port-forward:"
+          cat /tmp/port-forward.log
