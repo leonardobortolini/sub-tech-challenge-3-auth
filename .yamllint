@@ -1,0 +1,11 @@
+extends: default
+
+rules:
+  document-start:
+    level: warning
+
+  line-length:
+    max: 160
+
+  new-line-at-end-of-file:
+    level: error
