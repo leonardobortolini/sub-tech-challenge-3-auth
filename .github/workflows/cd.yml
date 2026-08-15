@@ -1,0 +1,122 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+
+jobs:
+
+  deploy:
+
+    name: Deploy Keycloak
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Iniciar Minikube
+        uses: medyagh/setup-minikube@latest
+
+      - name: Aplicar manifests
+        run: |
+          kubectl apply -f k8s/
+
+      - name: Aguardar PostgreSQL
+        run: |
+          kubectl rollout status \
+            deployment/keycloak-postgres \
+            -n revenda \
+            --timeout=180s
+
+      - name: Aguardar Keycloak
+        run: |
+          kubectl rollout status \
+            deployment/keycloak \
+            -n revenda \
+            --timeout=180s
+
+      - name: Verificar pods
+        run: |
+          kubectl get pods -n revenda
+
+      - name: Verificar Keycloak
+        run: |
+          echo "Aguardando Keycloak iniciar..."
+
+          for i in {1..60}; do
+
+            if kubectl logs \
+              -n revenda \
+              -l app=keycloak \
+              --tail=50 2>/dev/null \
+              | grep -q "started in"; then
+
+              echo "Keycloak terminou a inicialização."
+              break
+
+            fi
+
+            echo "Keycloak ainda está inicializando..."
+            sleep 5
+
+          done
+
+          if ! kubectl logs \
+            -n revenda \
+            -l app=keycloak \
+            --tail=50 2>/dev/null \
+            | grep -q "started in"; then
+
+            echo "Keycloak não terminou a inicialização."
+            exit 1
+
+          fi
+
+          echo "Iniciando port-forward..."
+
+          kubectl port-forward \
+            -n revenda \
+            service/keycloak-service \
+            8080:8080 > /tmp/port-forward.log 2>&1 &
+
+          PORT_FORWARD_PID=$!
+
+          trap 'kill $PORT_FORWARD_PID 2>/dev/null || true' EXIT
+
+          echo "Aguardando endpoint do Keycloak..."
+
+          for i in {1..30}; do
+
+            if curl -sf \
+              http://localhost:8080/realms/revenda/.well-known/openid-configuration \
+              > /dev/null; then
+
+              echo "Keycloak disponível."
+              exit 0
+
+            fi
+
+            echo "Endpoint ainda não está disponível..."
+            sleep 2
+
+          done
+
+          echo "Keycloak não ficou disponível."
+          cat /tmp/port-forward.log
+          exit 1
+
+      - name: Exibir logs em caso de erro
+        if: failure()
+        run: |
+          kubectl get pods -n revenda
+          kubectl describe pods -n revenda
+          kubectl logs \
+            -n revenda \
+            -l app=keycloak \
+            --tail=100
+          echo "Logs do port-forward:"
+          cat /tmp/port-forward.log

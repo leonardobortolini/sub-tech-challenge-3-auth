@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+
+  push:
+    branches:
+      - dev
+      - main
+
+jobs:
+
+  validate:
+    name: Validar arquivos
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar yamllint
+        run: pip install yamllint
+
+      - name: Validar YAML
+        run: yamllint k8s/
+
+      - name: Validar JSON do realm
+        run: python -m json.tool keycloak/revenda-realm.json > /dev/null
+
+      - name: Validar Docker Compose
+        env:
+          POSTGRES_DB: keycloak
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: admin
+          KC_BOOTSTRAP_ADMIN_USERNAME: admin
+          KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+        run: docker compose config

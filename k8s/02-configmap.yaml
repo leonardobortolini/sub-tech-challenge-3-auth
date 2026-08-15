@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: keycloak-config
+  namespace: revenda
+
+data:
+  POSTGRES_DB: revenda
+  POSTGRES_HOST: keycloak-postgres-service
