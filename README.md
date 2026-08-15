@@ -261,8 +261,11 @@ Verifique os serviços:
 kubectl get svc -n revenda
 ```
 
-O Keycloak será disponibilizado através do serviço Kubernetes configurado nos
-manifests.
+Para acessar a API por meio do Minikube:
+
+```bash
+kubectl port-forward-n revenda service/keycloak-service 18081:8080
+```
 
 ---
 
