@@ -270,7 +270,7 @@ kubectl get svc -n revenda
 Para acessar a API por meio do Minikube:
 
 ```bash
-kubectl port-forward-n revenda service/keycloak-service 18081:8080
+kubectl port-forward -n revenda service/keycloak-service 18081:8080
 ```
 
 ---
